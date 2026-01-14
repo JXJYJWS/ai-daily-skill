@@ -31,8 +31,16 @@ GITHUB_PAGES_URL = os.getenv("GITHUB_PAGES_URL", "")
 # ============================================================================
 # 邮件通知配置
 # ============================================================================
+def _get_env_int(key: str, default: int) -> int:
+    """获取整数环境变量，处理空字符串情况"""
+    value = os.getenv(key)
+    if value is None or value == "":
+        return default
+    return int(value)
+
+
 SMTP_HOST = os.getenv("SMTP_HOST")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_PORT = _get_env_int("SMTP_PORT", 587)
 SMTP_USER = os.getenv("SMTP_USER")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
 NOTIFICATION_TO = os.getenv("NOTIFICATION_TO")
