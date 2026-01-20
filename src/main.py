@@ -13,9 +13,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.config import (
-    ZHIPU_API_KEY,
-    OUTPUT_DIR,
-    ENABLE_IMAGE_GENERATION
+    OUTPUT_DIR
 )
 from src.tianapi_fetcher import TianapiFetcher
 from src.simple_generator import generate_simple_html
