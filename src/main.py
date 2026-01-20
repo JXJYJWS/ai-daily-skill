@@ -42,7 +42,7 @@ def print_banner():
 
 def get_target_date(days_offset: int = 2) -> str:
     """
-    获取目标日期
+    获取目标日期（已废弃，保留用于兼容）
 
     Args:
         days_offset: 向前偏移的天数，默认2天
@@ -52,6 +52,25 @@ def get_target_date(days_offset: int = 2) -> str:
     """
     target_date = (datetime.now(timezone.utc) - timedelta(days=days_offset))
     return target_date.strftime("%Y-%m-%d")
+
+
+def get_latest_available_date(fetcher, rss_data) -> str:
+    """
+    获取 RSS 中最新的可用日期
+
+    Args:
+        fetcher: RSSFetcher 实例
+        rss_data: RSS 数据
+
+    Returns:
+        最新的可用日期字符串 (YYYY-MM-DD)
+    """
+    date_range = fetcher.get_date_range(rss_data)
+    if date_range[1]:  # max_date
+        return date_range[1]
+
+    # 如果无法获取日期范围，回退到 2 天前
+    return get_target_date(days_offset=2)
 
 
 def main():
@@ -68,18 +87,16 @@ def main():
     notifier = EmailNotifier()
     email_enabled = notifier._is_configured()
     image_enabled = ENABLE_IMAGE_GENERATION
-    total_steps = 6 if email_enabled else 5
+    # 基础步骤: 下载RSS, 获取日期, 查找资讯, 分析, 生成HTML = 5步
+    # 可选步骤: 生成图片, 发送邮件
+    total_steps = 5  # 基础步骤
     if image_enabled:
-        total_steps += 1
+        total_steps += 1  # 图片生成
+    if email_enabled:
+        total_steps += 1  # 邮件通知
 
     try:
-        # 1. 计算目标日期 (今天 - 2天)
-        target_date = get_target_date(days_offset=2)
-        print(f"[目标日期] {target_date}")
-        print(f"   (北京时间: {datetime.now(timezone.utc) + timedelta(hours=8)} + 8h)")
-        print()
-
-        # 2. 下载并解析 RSS
+        # 1. 下载并解析 RSS
         print(f"[步骤 1/{total_steps}] 下载 RSS...")
         fetcher = RSSFetcher()
         rss_data = fetcher.fetch()
@@ -90,8 +107,15 @@ def main():
             print(f"   RSS 日期范围: {date_range[0]} ~ {date_range[1]}")
         print()
 
+        # 2. 使用最新可用日期
+        print(f"[步骤 2/{total_steps}] 获取最新可用日期...")
+        target_date = get_latest_available_date(fetcher, rss_data)
+        print(f"   目标日期: {target_date}")
+        print(f"   (北京时间: {datetime.now(timezone.utc) + timedelta(hours=8)})")
+        print()
+
         # 3. 查找目标日期的内容
-        print(f"[步骤 2/{total_steps}] 查找目标日期的资讯...")
+        print(f"[步骤 3/{total_steps}] 查找目标日期的资讯...")
         content = fetcher.get_content_by_date(target_date, rss_data)
 
         if not content:
@@ -116,7 +140,7 @@ def main():
         print()
 
         # 4. 调用 Claude 分析
-        print(f"[步骤 3/{total_steps}] 调用 Claude 进行智能分析...")
+        print(f"[步骤 4/{total_steps}] 调用 Claude 进行智能分析...")
         analyzer = ClaudeAnalyzer()
         result = analyzer.analyze(content, target_date)
 
@@ -130,7 +154,7 @@ def main():
         print()
 
         # 5. 生成 HTML
-        print(f"[步骤 4/{total_steps}] 生成 HTML 页面...")
+        print(f"[步骤 5/{total_steps}] 生成 HTML 页面...")
         generator = HTMLGenerator()
         generator.generate_css()
 
@@ -149,7 +173,7 @@ def main():
         image_path = None
         xhs_path = None
         if image_enabled:
-            print(f"[步骤 5/{total_steps}] 生成分享卡片图片...")
+            print(f"[步骤 6/{total_steps}] 生成分享卡片图片...")
             image_gen = ImageGenerator()
             image_path = image_gen.generate_from_analysis_result(
                 result,
@@ -172,7 +196,7 @@ def main():
 
         # 7. 发送成功通知（可选）
         if email_enabled:
-            step_num = 6 if image_enabled else 5
+            step_num = 7 if image_enabled else 6
             print(f"[步骤 {step_num}/{total_steps}] 发送邮件通知...")
             notifier.send_success(target_date, total_items)
             print()
