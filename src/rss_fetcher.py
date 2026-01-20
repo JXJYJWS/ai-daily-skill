@@ -194,10 +194,17 @@ class RSSFetcher:
 
         dates = []
         for entry in feed.entries:
+            # 方法1: 尝试从 link 中提取日期
             if hasattr(entry, 'link'):
                 date_from_link = self._extract_date_from_link(entry.link)
                 if date_from_link:
                     dates.append(date_from_link)
+                    continue
+
+            # 方法2: 尝试从 published_parsed 中提取日期（标准 RSS 格式）
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+                dates.append(dt.strftime("%Y-%m-%d"))
 
         if not dates:
             return None, None
