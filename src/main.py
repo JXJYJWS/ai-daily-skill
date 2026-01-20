@@ -17,7 +17,7 @@ from src.config import (
     OUTPUT_DIR,
     ENABLE_IMAGE_GENERATION
 )
-from src.rss_fetcher import RSSFetcher
+from src.tianapi_fetcher import TianapiFetcher
 from src.claude_analyzer import ClaudeAnalyzer
 from src.html_generator import HTMLGenerator
 from src.notifier import EmailNotifier
@@ -54,23 +54,19 @@ def get_target_date(days_offset: int = 2) -> str:
     return target_date.strftime("%Y-%m-%d")
 
 
-def get_latest_available_date(fetcher, rss_data) -> str:
+def get_latest_available_date(fetcher, data) -> str:
     """
-    获取 RSS 中最新的可用日期
+    获取最新可用日期
 
     Args:
-        fetcher: RSSFetcher 实例
-        rss_data: RSS 数据
+        fetcher: TianapiFetcher 实例
+        data: API 数据
 
     Returns:
-        最新的可用日期字符串 (YYYY-MM-DD)
+        今天的日期字符串 (YYYY-MM-DD)
     """
-    date_range = fetcher.get_date_range(rss_data)
-    if date_range[1]:  # max_date
-        return date_range[1]
-
-    # 如果无法获取日期范围，回退到 2 天前
-    return get_target_date(days_offset=2)
+    # 天行数据始终返回今天的日期
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
 
 def main():
@@ -96,47 +92,26 @@ def main():
         total_steps += 1  # 邮件通知
 
     try:
-        # 1. 下载并解析 RSS
-        print(f"[步骤 1/{total_steps}] 下载 RSS...")
-        fetcher = RSSFetcher()
-        rss_data = fetcher.fetch()
+        # 1. 从天行数据获取资讯
+        print(f"[步骤 1/{total_steps}] 获取 AI 资讯...")
+        fetcher = TianapiFetcher()
+        api_data = fetcher.fetch(num=10)
 
-        # 显示 RSS 信息
-        date_range = fetcher.get_date_range(rss_data)
-        if date_range[0] and date_range[1]:
-            print(f"   RSS 日期范围: {date_range[0]} ~ {date_range[1]}")
+        print(f"   成功获取 {len(api_data)} 条资讯")
         print()
 
-        # 2. 使用最新可用日期
-        print(f"[步骤 2/{total_steps}] 获取最新可用日期...")
-        target_date = get_latest_available_date(fetcher, rss_data)
+        # 2. 获取今天的日期
+        print(f"[步骤 2/{total_steps}] 获取日期...")
+        target_date = get_latest_available_date(fetcher, api_data)
         print(f"   目标日期: {target_date}")
         print(f"   (北京时间: {datetime.now(timezone.utc) + timedelta(hours=8)})")
         print()
 
-        # 3. 查找目标日期的内容
-        print(f"[步骤 3/{total_steps}] 查找目标日期的资讯...")
-        content = fetcher.get_content_by_date(target_date, rss_data)
+        # 3. 格式化内容
+        print(f"[步骤 3/{total_steps}] 格式化资讯内容...")
+        content = fetcher.get_content(num=10)
 
-        if not content:
-            print("   目标日期无内容，生成空页面")
-            if email_enabled:
-                notifier.send_empty(
-                    target_date,
-                    f"RSS 中未找到 {target_date} 的资讯内容。"
-                    f"RSS 可用日期范围: {date_range[0]} ~ {date_range[1]}"
-                )
-
-            # 生成空页面
-            generator = HTMLGenerator()
-            generator.generate_css()
-            generator.generate_empty(target_date)
-            generator.update_index(target_date, {"summary": ["暂无资讯"]})
-
-            print("   完成")
-            return
-
-        print(f"   找到资讯: {content.get('title', '')[:60]}...")
+        print(f"   标题: {content.get('title', '')}")
         print()
 
         # 4. 调用 Claude 分析

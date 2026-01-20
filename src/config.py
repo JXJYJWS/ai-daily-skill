@@ -11,6 +11,7 @@ ANTHROPIC_BASE_URL = os.getenv(
     "https://open.bigmodel.cn/api/anthropic"
 )
 ZHIPU_API_KEY = os.getenv("ZHIPU_API_KEY")
+TIANAPI_API_KEY = os.getenv("TIANAPI_API_KEY", "0cb5cca4164b5b832a3e28df1e5ad834")
 
 # Claude 模型配置
 CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-3-5-sonnet-20241022")
