@@ -58,8 +58,8 @@ jobs:
           echo "当前时间 (UTC): $(date -u)"
           echo "目标日期 (前两天): $(date -u -d '2 days ago' +%Y-%m-%d)"
 
-     - name: 运行 AI Daily 生成器
-          env:
+      - name: 运行 AI Daily 生成器
+        env:
             # 天行数据 API 配置
             TIANAPI_API_KEY: ${{ secrets.TIANAPI_API_KEY }}
 
@@ -76,7 +76,7 @@ jobs:
             # GitHub 环境变量（用于日志链接）
             GITHUB_REPOSITORY: ${{ github.repository }}
             GITHUB_SERVER_URL: ${{ github.server_url }}
-          run: |
+        run: |
             python src/main.py
 
       - name: 检查生成结果
