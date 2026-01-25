@@ -1,0 +1,1 @@
+{"error": "Failed to fetch RSS: HTTPSConnectionPool(host='news.smol.ai', port=443): Read timed out. (read timeout=30)"}
