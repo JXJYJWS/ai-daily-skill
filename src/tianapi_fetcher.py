@@ -14,7 +14,8 @@ class TianapiFetcher:
     API_URL = "https://apis.tianapi.com/ai/index"
 
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or "0cb5cca4164b5b832a3e28df1e5ad834"
+        # 正确：优先读传入参数 -> 其次读环境变量 -> 最后才用默认值
+        self.api_key = api_key or os.getenv("TIANAPI_API_KEY")
         self.timeout = 30
 
     def fetch(self, num: int = 10) -> List[Dict]:
