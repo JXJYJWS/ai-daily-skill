@@ -7,15 +7,21 @@ from datetime import datetime, timezone
 from typing import Optional, Dict, List
 import os
 
-
 class TianapiFetcher:
     """天行数据 API 获取器"""
 
     API_URL = "https://apis.tianapi.com/ai/index"
 
     def __init__(self, api_key: str = None):
-        # 正确：优先读传入参数 -> 其次读环境变量 -> 最后才用默认值
+        # ⚡️ 核心修改：这里强制只读环境变量！如果没有环境变量，直接让它报错，绝不妥协用旧 Key
         self.api_key = api_key or os.getenv("TIANAPI_API_KEY")
+        
+        if not self.api_key:
+            print("❌ [严重错误] 未检测到 API Key！程序将无法获取数据。")
+        else:
+            # 只打印前4位用于调试，保护隐私
+            print(f"✅ API Key 已加载: {self.api_key[:4]}******")
+
         self.timeout = 30
 
     def fetch(self, num: int = 10) -> List[Dict]:
@@ -39,7 +45,8 @@ class TianapiFetcher:
             data = response.json()
 
             if data.get("code") != 200:
-                raise Exception(f"API 错误: {data.get('msg', '未知错误')}")
+                # 打印详细错误码，方便排查
+                raise Exception(f"API 接口报错: {data.get('msg')} (代码: {data.get('code')})")
 
             news_list = data.get("result", {}).get("newslist", [])
             print(f"[OK] 成功获取 {len(news_list)} 条 AI 资讯")
@@ -68,9 +75,3 @@ class TianapiFetcher:
             html += f'<small>来源: {news.get("source", "")} | {news.get("ctime", "")}</small></li>'
         html += "</ul>"
         return html
-
-
-def fetch_tianapi_news(num: int = 10) -> Dict:
-    """便捷函数"""
-    fetcher = TianapiFetcher()
-    return fetcher.get_content(num)
