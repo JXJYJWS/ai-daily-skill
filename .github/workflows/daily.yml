@@ -71,7 +71,7 @@ jobs:
             NOTIFICATION_TO: ${{ secrets.NOTIFICATION_TO }}
 
             # GitHub Pages URL（用于邮件中的链接）
-            GITHUB_PAGES_URL: ${{ github.event.repository.html_url }}.github.io
+            GITHUB_PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
 
             # GitHub 环境变量（用于日志链接）
             GITHUB_REPOSITORY: ${{ github.repository }}
